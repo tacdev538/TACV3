@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Unified Field — Multi-Agency Search Tracking</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+:root{
+  --bg:#0A0E1A;
+  --panel:#111827;
+  --panel-alt:#0D1320;
+  --grid-line: rgba(148,163,184,0.09);
+  --border: rgba(148,163,184,0.14);
+  --text-primary:#E8ECF4;
+  --text-muted:#8592AD;
+  --text-dim:#4B5670;
+  --cyan:#2DD4E8;
+  --cyan-dim: rgba(45,212,232,0.18);
+  --amber:#F5A623;
+  --amber-dim: rgba(245,166,35,0.18);
+  --red:#FF4757;
+  --violet:#A78BFA;
+  --blue:#5B9EF5;
+  --green:#34D399;
+}
+
+*{box-sizing:border-box; margin:0; padding:0;}
+html,body{
+  background:var(--bg);
+  color:var(--text-primary);
+  font-family:'Inter',sans-serif;
+  height:100%;
+  overflow:hidden;
+}
+.mono{ font-family:'JetBrains Mono',monospace; }
+.disp{ font-family:'Oswald',sans-serif; text-transform:uppercase; letter-spacing:0.04em; }
+
+#app{
+  display:grid;
+  grid-template-rows: 58px 1fr 130px;
+  grid-template-columns: 1fr 300px;
+  height:100vh;
+  gap:1px;
+  background:var(--border);
+}
+
+/* ===== HEADER ===== */
+header{
+  grid-column: 1 / 3;
+  background:var(--panel-alt);
+  display:flex;
+  align-items:center;
+  padding:0 20px;
+  gap:24px;
+  border-bottom:1px solid var(--border);
+}
+.brand{
+  display:flex;
+  flex-direction:column;
+  line-height:1.1;
+}
+.brand .op{
+  font-family:'Oswald',sans-serif;
+  font-weight:700;
+  font-size:16px;
+  letter-spacing:0.06em;
+  color:var(--text-primary);
+}
+.brand .op span{ color:var(--cyan); }
+.brand .loc{
+  font-size:10.5px;
+  color:var(--text-muted);
+  letter-spacing:0.08em;
+  margin-top:2px;
+}
+.hdr-divider{ width:1px; height:28px; background:var(--border); }
+.hdr-stat{ display:flex; flex-direction:column; gap:2px; }
+.hdr-stat .val{ font-family:'JetBrains Mono',monospace; font-size:17px; font-weight:600; }
+.hdr-stat .lbl{ font-size:9.5px; letter-spacing:0.1em; color:var(--text-dim); text-transform:uppercase; }
+.hdr-stat.pulse .val{ color:var(--cyan); }
+header .spacer{ flex:1; }
+.clock{
+  font-family:'JetBrains Mono',monospace;
+  font-size:15px;
+  color:var(--text-muted);
+  letter-spacing:0.05em;
+}
+.status-chip{
+  display:flex; align-items:center; gap:7px;
+  font-family:'Oswald',sans-serif;
+  font-size:11.5px; letter-spacing:0.08em;
+  padding:6px 12px;
+  border:1px solid rgba(45,212,232,0.35);
+  border-radius:3px;
+  color:var(--cyan);
+  background:rgba(45,212,232,0.06);
+}
+.status-dot{ width:7px; height:7px; border-radius:50%; background:var(--cyan); box-shadow:0 0 8px var(--cyan); animation: blink 2s infinite; }
+@keyframes blink{ 0%,100%{opacity:1;} 50%{opacity:0.35;} }
+
+/* ===== MAP ===== */
+#map-wrap{
+  position:relative;
+  background:var(--panel-alt);
+  overflow:hidden;
+}
+#map-wrap .map-label{
+  position:absolute; top:12px; left:16px;
+  font-family:'Oswald',sans-serif; font-size:11px; letter-spacing:0.1em;
+  color:var(--text-dim); z-index:5;
+}
+#map-wrap .map-legend{
+  position:absolute; bottom:12px; left:16px;
+  display:flex; gap:16px; z-index:5;
+}
+.legend-item{ display:flex; align-items:center; gap:6px; font-size:10.5px; color:var(--text-muted); letter-spacing:0.03em;}
+.legend-dot{ width:8px; height:8px; border-radius:50%; }
+svg#tactical{ width:100%; height:100%; display:block; }
+
+/* ===== SIDEBAR ROSTER ===== */
+#roster{
+  background:var(--panel);
+  overflow-y:auto;
+  padding:14px 0;
+}
+.roster-head{
+  font-family:'Oswald',sans-serif;
+  font-size:11px; letter-spacing:0.12em; color:var(--text-dim);
+  padding:4px 16px 8px;
+}
+.agency-group{ margin-bottom:6px; }
+.agency-title{
+  font-family:'Oswald',sans-serif;
+  font-size:10.5px; letter-spacing:0.1em;
+  padding:8px 16px 6px;
+  display:flex; align-items:center; gap:7px;
+}
+.officer-row{
+  display:flex; align-items:center; gap:9px;
+  padding:7px 16px;
+  cursor:default;
+  transition:background 0.15s;
+  border-left:2px solid transparent;
+}
+.officer-row:hover{ background:rgba(255,255,255,0.02); }
+.officer-row.duress{ border-left-color:var(--red); background:rgba(255,71,87,0.06); }
+.o-dot{ width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+.o-info{ display:flex; flex-direction:column; flex:1; min-width:0; }
+.o-name{ font-size:12.5px; font-weight:500; color:var(--text-primary); }
+.o-meta{ font-family:'JetBrains Mono',monospace; font-size:9.5px; color:var(--text-dim); }
+.o-badge{
+  font-family:'JetBrains Mono',monospace;
+  font-size:9px; letter-spacing:0.04em;
+  padding:2px 6px; border-radius:2px;
+  text-transform:uppercase;
+}
+.o-badge.active{ color:var(--cyan); background:rgba(45,212,232,0.1); }
+.o-badge.duress{ color:var(--red); background:rgba(255,71,87,0.14); animation: badgeflash 1s infinite; }
+@keyframes badgeflash{ 0%,100%{opacity:1;} 50%{opacity:0.5;} }
+
+/* ===== BOTTOM: coverage + log ===== */
+#bottom-left{
+  background:var(--panel);
+  border-top:1px solid var(--border);
+  display:flex;
+  align-items:center;
+  padding:0 22px;
+  gap:26px;
+}
+.coverage-gauge{
+  display:flex; align-items:center; gap:14px;
+}
+.gauge-ring{ position:relative; width:76px; height:76px; }
+.gauge-ring svg{ transform:rotate(-90deg); }
+.gauge-pct{
+  position:absolute; inset:0;
+  display:flex; align-items:center; justify-content:center;
+  font-family:'JetBrains Mono',monospace; font-weight:600; font-size:15px;
+}
+.gauge-label{ display:flex; flex-direction:column; gap:3px; }
+.gauge-label .t{ font-family:'Oswald',sans-serif; font-size:12px; letter-spacing:0.08em; color:var(--text-primary); }
+.gauge-label .s{ font-size:10.5px; color:var(--text-muted); }
+.bottom-divider{ width:1px; height:56px; background:var(--border); }
+.mini-stats{ display:flex; gap:22px; }
+.mini-stat{ display:flex; flex-direction:column; gap:3px; }
+.mini-stat .v{ font-family:'JetBrains Mono',monospace; font-size:16px; font-weight:600; }
+.mini-stat .l{ font-size:9.5px; letter-spacing:0.08em; color:var(--text-dim); text-transform:uppercase; }
+#bottom-left .spacer{ flex:1; }
+#sim-btn{
+  font-family:'Oswald',sans-serif; font-size:11px; letter-spacing:0.08em;
+  background:transparent; color:var(--red);
+  border:1px solid rgba(255,71,87,0.4);
+  padding:9px 16px; border-radius:3px; cursor:pointer;
+  transition:all 0.15s;
+}
+#sim-btn:hover{ background:rgba(255,71,87,0.1); }
+#reset-btn{
+  font-family:'Oswald',sans-serif; font-size:11px; letter-spacing:0.08em;
+  background:transparent; color:var(--text-muted);
+  border:1px solid var(--border);
+  padding:9px 16px; border-radius:3px; cursor:pointer; margin-left:8px;
+  transition:all 0.15s;
+}
+#reset-btn:hover{ color:var(--text-primary); border-color:var(--text-muted); }
+
+#activity-log{
+  background:var(--panel);
+  border-top:1px solid var(--border);
+  border-left:1px solid var(--border);
+  overflow-y:auto;
+  padding:10px 14px;
+}
+.log-title{ font-family:'Oswald',sans-serif; font-size:10px; letter-spacing:0.12em; color:var(--text-dim); margin-bottom:6px; }
+.log-entry{
+  font-family:'JetBrains Mono',monospace; font-size:10.5px;
+  color:var(--text-muted);
+  padding:2.5px 0;
+  display:flex; gap:8px;
+  animation: fadein 0.4s ease;
+}
+@keyframes fadein{ from{opacity:0; transform:translateY(-3px);} to{opacity:1; transform:translateY(0);} }
+.log-entry .t{ color:var(--text-dim); flex-shrink:0; }
+.log-entry.alert{ color:var(--red); }
+.log-entry.clear{ color:var(--cyan); }
+
+::-webkit-scrollbar{ width:6px; }
+::-webkit-scrollbar-thumb{ background:var(--border); border-radius:3px; }
+::-webkit-scrollbar-track{ background:transparent; }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <header>
+    <div class="brand">
+      <div class="op">TRI-STATE FUGITIVE TASK FORCE — <span>UNIFIED FIELD</span></div>
+      <div class="loc mono">SEARCH GRID · MAPLE RIDGE TIMBER TRACT · SECTOR 14-B</div>
+    </div>
+    <div class="hdr-divider"></div>
+    <div class="hdr-stat pulse">
+      <div class="val" id="hdr-active">7</div>
+      <div class="lbl">Units Active</div>
+    </div>
+    <div class="hdr-divider"></div>
+    <div class="hdr-stat">
+      <div class="val mono" id="hdr-cov">0%</div>
+      <div class="lbl">Area Cleared</div>
+    </div>
+    <div class="hdr-divider"></div>
+    <div class="hdr-stat">
+      <div class="val" id="hdr-agencies">3</div>
+      <div class="lbl">Agencies</div>
+    </div>
+    <div class="spacer"></div>
+    <div class="clock" id="clock">00:00:00</div>
+    <div class="status-chip" style="margin-left:16px;"><div class="status-dot"></div>LIVE</div>
+  </header>
+
+  <div id="map-wrap">
+    <div class="map-label">GRID COVERAGE — LIVE POSITIONING</div>
+    <svg id="tactical" viewBox="0 0 800 480" preserveAspectRatio="xMidYMid meet"></svg>
+    <div class="map-legend">
+      <div class="legend-item"><div class="legend-dot" style="background:var(--violet)"></div>FEDERAL</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--blue)"></div>STATE</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div>LOCAL</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--cyan)"></div>CLEARED</div>
+    </div>
+  </div>
+
+  <div id="roster">
+    <div class="roster-head">MULTI-AGENCY ROSTER</div>
+    <div id="roster-body"></div>
+  </div>
+
+  <div id="bottom-left">
+    <div class="coverage-gauge">
+      <div class="gauge-ring">
+        <svg width="76" height="76" viewBox="0 0 76 76">
+          <circle cx="38" cy="38" r="33" fill="none" stroke="rgba(148,163,184,0.12)" stroke-width="6"/>
+          <circle id="gauge-circle" cx="38" cy="38" r="33" fill="none" stroke="#2DD4E8" stroke-width="6"
+            stroke-dasharray="207.3" stroke-dashoffset="207.3" stroke-linecap="round"/>
+        </svg>
+        <div class="gauge-pct" id="gauge-pct-text">0%</div>
+      </div>
+      <div class="gauge-label">
+        <div class="t">Search Integrity</div>
+        <div class="s">Verified ground coverage</div>
+      </div>
+    </div>
+    <div class="bottom-divider"></div>
+    <div class="mini-stats">
+      <div class="mini-stat"><div class="v" id="ms-cells">0 / 240</div><div class="l">Cells Cleared</div></div>
+      <div class="mini-stat"><div class="v" id="ms-elapsed">00:00</div><div class="l">Elapsed</div></div>
+      <div class="mini-stat"><div class="v" id="ms-alerts">0</div><div class="l">Alerts</div></div>
+    </div>
+    <div class="spacer"></div>
+    <button id="sim-btn">⚠ SIMULATE DURESS</button>
+    <button id="reset-btn">RESET SEARCH</button>
+  </div>
+
+  <div id="activity-log">
+    <div class="log-title">ACTIVITY LOG</div>
+    <div id="log-body"></div>
+  </div>
+</div>
+
+<script>
+const NS = "http://www.w3.org/2000/svg";
+const svg = document.getElementById('tactical');
+const VBW = 800, VBH = 480;
+const COLS = 20, ROWS = 12;
+const CW = VBW / COLS, CH = VBH / ROWS;
+
+const AGENCY_COLORS = { federal:'#A78BFA', state:'#5B9EF5', local:'#34D399' };
+const AGENCY_LABELS = { federal:'FEDERAL', state:'STATE', local:'LOCAL' };
+
+const officers = [
+  {id:'F-1', name:'S/A Cruz',    agency:'federal', callsign:'FED-01', x:120, y:90},
+  {id:'F-2', name:'S/A Whitman', agency:'federal', callsign:'FED-02', x:680, y:400},
+  {id:'S-1', name:'Tpr. Diaz',   agency:'state',   callsign:'STA-01', x:400, y:60},
+  {id:'S-2', name:'Tpr. Ncube',  agency:'state',   callsign:'STA-02', x:200, y:380},
+  {id:'L-1', name:'Dep. Hale',   agency:'local',   callsign:'LOC-01', x:600, y:120},
+  {id:'L-2', name:'Dep. Ortiz',  agency:'local',   callsign:'LOC-02', x:340, y:300},
+  {id:'L-3', name:'Ofc. Beck',   agency:'local',   callsign:'LOC-03', x:500, y:250},
+];
+
+officers.forEach(o=>{
+  o.status = 'active';
+  o.trail = [];
+  o.targetX = o.x; o.targetY = o.y;
+  o.speed = 0.55 + Math.random()*0.4;
+});
+
+let coverage = new Array(ROWS).fill(0).map(()=> new Array(COLS).fill(0));
+let elapsedSec = 0;
+let alertCount = 0;
+
+// --- build grid ---
+const gridGroup = document.createElementNS(NS,'g');
+svg.appendChild(gridGroup);
+const cellRects = [];
+for(let r=0;r<ROWS;r++){
+  cellRects.push([]);
+  for(let c=0;c<COLS;c++){
+    const rect = document.createElementNS(NS,'rect');
+    rect.setAttribute('x', c*CW);
+    rect.setAttribute('y', r*CH);
+    rect.setAttribute('width', CW);
+    rect.setAttribute('height', CH);
+    rect.setAttribute('fill', 'transparent');
+    rect.setAttribute('stroke', 'rgba(148,163,184,0.09)');
+    rect.setAttribute('stroke-width', '1');
+    gridGroup.appendChild(rect);
+    cellRects[r].push(rect);
+  }
+}
+
+// trail group + officer group (drawn after grid, before markers layer defined per officer)
+const trailGroup = document.createElementNS(NS,'g');
+svg.appendChild(trailGroup);
+const markerGroup = document.createElementNS(NS,'g');
+svg.appendChild(markerGroup);
+
+officers.forEach(o=>{
+  o.trailPath = document.createElementNS(NS,'polyline');
+  o.trailPath.setAttribute('fill','none');
+  o.trailPath.setAttribute('stroke', AGENCY_COLORS[o.agency]);
+  o.trailPath.setAttribute('stroke-width','1.4');
+  o.trailPath.setAttribute('stroke-opacity','0.35');
+  trailGroup.appendChild(o.trailPath);
+
+  o.ring = document.createElementNS(NS,'circle');
+  o.ring.setAttribute('r','11');
+  o.ring.setAttribute('fill','none');
+  o.ring.setAttribute('stroke', AGENCY_COLORS[o.agency]);
+  o.ring.setAttribute('stroke-width','1.2');
+  o.ring.setAttribute('stroke-opacity','0.5');
+  markerGroup.appendChild(o.ring);
+
+  o.dot = document.createElementNS(NS,'circle');
+  o.dot.setAttribute('r','5.5');
+  o.dot.setAttribute('fill', AGENCY_COLORS[o.agency]);
+  markerGroup.appendChild(o.dot);
+
+  o.label = document.createElementNS(NS,'text');
+  o.label.setAttribute('font-family','JetBrains Mono, monospace');
+  o.label.setAttribute('font-size','9.5');
+  o.label.setAttribute('fill', '#8592AD');
+  o.label.setAttribute('y', -14);
+  o.label.textContent = o.callsign;
+  markerGroup.appendChild(o.label);
+});
+
+function pickNewTarget(o){
+  o.targetX = 30 + Math.random()*(VBW-60);
+  o.targetY = 30 + Math.random()*(VBH-60);
+}
+officers.forEach(pickNewTarget);
+
+function markCoverage(x,y){
+  const c = Math.floor(x/CW), r = Math.floor(y/CH);
+  const radius = 1;
+  for(let rr=r-radius; rr<=r+radius; rr++){
+    for(let cc=c-radius; cc<=c+radius; cc++){
+      if(rr>=0 && rr<ROWS && cc>=0 && cc<COLS){
+        const dist = Math.hypot(rr-r, cc-c);
+        const gain = dist===0 ? 0.045 : 0.018;
+        coverage[rr][cc] = Math.min(1, coverage[rr][cc] + gain);
+      }
+    }
+  }
+}
+
+function renderCoverage(){
+  let clearedCells = 0;
+  let sum = 0;
+  for(let r=0;r<ROWS;r++){
+    for(let c=0;c<COLS;c++){
+      const v = coverage[r][c];
+      sum += v;
+      const rect = cellRects[r][c];
+      if(v >= 0.95){
+        clearedCells++;
+        rect.setAttribute('fill','rgba(45,212,232,0.22)');
+        rect.setAttribute('stroke','rgba(45,212,232,0.4)');
+      } else if(v > 0.02){
+        rect.setAttribute('fill', `rgba(245,166,35,${(v*0.35).toFixed(3)})`);
+        rect.setAttribute('stroke','rgba(148,163,184,0.09)');
+      } else {
+        rect.setAttribute('fill','transparent');
+        rect.setAttribute('stroke','rgba(148,163,184,0.09)');
+      }
+    }
+  }
+  const pct = Math.round((sum / (ROWS*COLS)) * 100);
+  document.getElementById('hdr-cov').textContent = pct + '%';
+  document.getElementById('ms-cells').textContent = clearedCells + ' / ' + (ROWS*COLS);
+  document.getElementById('gauge-pct-text').textContent = pct + '%';
+  const circumference = 207.3;
+  document.getElementById('gauge-circle').setAttribute('stroke-dashoffset', (circumference - (pct/100)*circumference).toFixed(1));
+  return {pct, clearedCells};
+}
+
+function addLog(text, cls){
+  const body = document.getElementById('log-body');
+  const now = new Date();
+  const t = now.toTimeString().slice(0,8);
+  const div = document.createElement('div');
+  div.className = 'log-entry' + (cls ? ' '+cls : '');
+  div.innerHTML = `<span class="t">${t}</span><span>${text}</span>`;
+  body.prepend(div);
+  while(body.children.length > 40) body.removeChild(body.lastChild);
+}
+
+function renderRoster(){
+  const body = document.getElementById('roster-body');
+  body.innerHTML = '';
+  ['federal','state','local'].forEach(ag=>{
+    const group = document.createElement('div');
+    group.className = 'agency-group';
+    const title = document.createElement('div');
+    title.className = 'agency-title';
+    title.style.color = AGENCY_COLORS[ag];
+    title.innerHTML = `<span style="width:6px;height:6px;border-radius:50%;background:${AGENCY_COLORS[ag]};display:inline-block;"></span>${AGENCY_LABELS[ag]}`;
+    group.appendChild(title);
+    officers.filter(o=>o.agency===ag).forEach(o=>{
+      const row = document.createElement('div');
+      row.className = 'officer-row' + (o.status==='duress' ? ' duress' : '');
+      row.innerHTML = `
+        <div class="o-dot" style="background:${AGENCY_COLORS[ag]}"></div>
+        <div class="o-info">
+          <div class="o-name">${o.name}</div>
+          <div class="o-meta">${o.callsign} · ${o.x.toFixed(0)},${o.y.toFixed(0)}</div>
+        </div>
+        <div class="o-badge ${o.status}">${o.status==='duress' ? 'DURESS' : 'ACTIVE'}</div>
+      `;
+      group.appendChild(row);
+    });
+    body.appendChild(group);
+  });
+}
+
+let lastCoverageLog = 0;
+function tick(){
+  officers.forEach(o=>{
+    if(o.status === 'duress') return;
+    const dx = o.targetX - o.x, dy = o.targetY - o.y;
+    const dist = Math.hypot(dx,dy);
+    if(dist < 4){ pickNewTarget(o); }
+    else{
+      o.x += (dx/dist) * o.speed;
+      o.y += (dy/dist) * o.speed;
+    }
+    markCoverage(o.x, o.y);
+
+    o.trail.push([o.x,o.y]);
+    if(o.trail.length > 45) o.trail.shift();
+    o.trailPath.setAttribute('points', o.trail.map(p=>p.join(',')).join(' '));
+
+    o.dot.setAttribute('cx', o.x); o.dot.setAttribute('cy', o.y);
+    o.ring.setAttribute('cx', o.x); o.ring.setAttribute('cy', o.y);
+    o.label.setAttribute('x', o.x - 14); o.label.setAttribute('y', o.y - 14);
+  });
+
+  const {pct} = renderCoverage();
+  if(pct >= lastCoverageLog + 10 && pct < 100){
+    lastCoverageLog = Math.floor(pct/10)*10;
+    addLog(`Grid coverage reached ${lastCoverageLog}% — sector sweep continuing`, 'clear');
+  }
+  renderRoster();
+  requestAnimationFrame(tick);
+}
+
+// clock + elapsed
+function updateClock(){
+  const now = new Date();
+  document.getElementById('clock').textContent = now.toTimeString().slice(0,8);
+}
+setInterval(()=>{
+  updateClock();
+  elapsedSec++;
+  const m = String(Math.floor(elapsedSec/60)).padStart(2,'0');
+  const s = String(elapsedSec%60).padStart(2,'0');
+  document.getElementById('ms-elapsed').textContent = `${m}:${s}`;
+}, 1000);
+updateClock();
+
+// duress simulation
+document.getElementById('sim-btn').addEventListener('click', ()=>{
+  const candidates = officers.filter(o=>o.status==='active');
+  if(candidates.length===0) return;
+  const o = candidates[Math.floor(Math.random()*candidates.length)];
+  o.status = 'duress';
+  o.ring.setAttribute('stroke', '#FF4757');
+  o.ring.setAttribute('stroke-opacity','1');
+  o.dot.setAttribute('fill', '#FF4757');
+  alertCount++;
+  document.getElementById('ms-alerts').textContent = alertCount;
+  addLog(`⚠ DURESS SIGNAL — ${o.name} (${o.callsign}) — position locked at ${o.x.toFixed(0)},${o.y.toFixed(0)}`, 'alert');
+
+  let pulses = 0;
+  const pulseAnim = setInterval(()=>{
+    const r = 11 + Math.sin(pulses/2)*6;
+    o.ring.setAttribute('r', r);
+    pulses++;
+    if(pulses > 200) clearInterval(pulseAnim);
+  }, 60);
+
+  setTimeout(()=>{
+    o.status = 'active';
+    o.ring.setAttribute('stroke', AGENCY_COLORS[o.agency]);
+    o.ring.setAttribute('stroke-opacity','0.5');
+    o.ring.setAttribute('r','11');
+    o.dot.setAttribute('fill', AGENCY_COLORS[o.agency]);
+    addLog(`Duress cleared — ${o.name} confirmed OK by supervisor`, 'clear');
+  }, 6000);
+});
+
+document.getElementById('reset-btn').addEventListener('click', ()=>{
+  coverage = new Array(ROWS).fill(0).map(()=> new Array(COLS).fill(0));
+  lastCoverageLog = 0;
+  elapsedSec = 0;
+  addLog('Search grid reset by command — new sweep initiated');
+});
+
+addLog('Task force channel established — 7 units online across 3 agencies');
+addLog('Search grid Sector 14-B activated — 240 cells pending clearance');
+renderRoster();
+requestAnimationFrame(tick);
+</script>
+</body>
+</html>
