@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TACNET Citizen - Personal Safety & Community Network</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        tacnet: {
+                            dark: '#0B0F19',
+                            card: '#131C31',
+                            border: '#1E293B',
+                            red: '#EF4444',
+                            redGlow: '#DC2626',
+                            orange: '#F97316',
+                            orangeGlow: '#EA580C',
+                        }
+                    },
+                    keyframes: {
+                        pulseGlow: {
+                            '0%, 100%': { transform: 'scale(1)', boxShadow: '0 0 25px rgba(239, 68, 68, 0.6)' },
+                            '50%': { transform: 'scale(1.05)', boxShadow: '0 0 50px rgba(239, 68, 68, 0.9)' },
+                        },
+                        pulseOrange: {
+                            '0%, 100%': { transform: 'scale(1)', boxShadow: '0 0 20px rgba(249, 115, 22, 0.4)' },
+                            '50%': { transform: 'scale(1.03)', boxShadow: '0 0 35px rgba(249, 115, 22, 0.7)' },
+                        },
+                        radarPulse: {
+                            '0%': { transform: 'scale(0.8)', opacity: '1' },
+                            '100%': { transform: 'scale(2.4)', opacity: '0' },
+                        }
+                    },
+                    animation: {
+                        'pulse-glow': 'pulseGlow 2s infinite ease-in-out',
+                        'pulse-orange': 'pulseOrange 3s infinite ease-in-out',
+                        'radar': 'radarPulse 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #07090E; color: #F8FAFC; }
+        /* Custom scrollbar for clean appearance */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #0B0F19; }
+        ::-webkit-scrollbar-thumb { background: #1E293B; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #334155; }
+    </style>
+</head>
+<body class="h-full flex flex-col justify-between selection:bg-red-500 selection:text-white">
+
+    <!-- Top App Header -->
+    <header class="bg-tacnet-card border-b border-tacnet-border px-4 py-3 sticky top-0 z-50 flex items-center justify-between shadow-lg">
+        <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-red-600 to-orange-500 flex items-center justify-center shadow-md">
+                <i class="fa-solid fa-shield-halved text-white text-lg"></i>
+            </div>
+            <div>
+                <h1 class="font-black tracking-wider text-lg text-white flex items-center gap-2">
+                    TACNET <span class="text-xs px-2 py-0.5 rounded bg-red-500/20 text-red-400 border border-red-500/30 uppercase tracking-widest font-semibold">Citizen</span>
+                </h1>
+                <p class="text-xs text-slate-400 flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 inline-block animate-pulse"></span>
+                    Connected to Local Dispatch & Inner Circle
+                </p>
+            </div>
+        </div>
+        <div class="flex items-center space-x-2">
+            <button onclick="triggerQuickCheckIn()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-3 py-2 rounded-xl text-xs font-medium flex items-center gap-1.5 transition">
+                <i class="fa-solid fa-circle-check text-emerald-400"></i>
+                <span class="hidden sm:inline">Safe Check-In</span>
+            </button>
+            <button onclick="openSettingsModal()" class="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center transition border border-slate-700">
+                <i class="fa-solid fa-gear"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main id="main-container" class="flex-1 overflow-y-auto p-4 max-w-4xl w-full mx-auto pb-24">
+        
+        <!-- ================= VIEW 1: DASHBOARD & PANIC ================= -->
+        <div id="view-dashboard" class="space-y-6">
+            
+            <!-- Quick Status Banner -->
+            <div class="bg-gradient-to-r from-slate-900 to-tacnet-card border border-tacnet-border rounded-2xl p-4 shadow-xl flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                        <i class="fa-solid fa-location-crosshairs text-xl animate-pulse"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-sm font-semibold text-slate-200">GPS Lock Active</h2>
+                        <p id="current-location-text" class="text-xs text-slate-400">Amherst County Sector 4 • 37.4929° N, 79.0360° W</p>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-1 rounded bg-slate-800 text-slate-300 border border-slate-700">Ready</span>
+                </div>
+            </div>
+
+            <!-- Massive Glowing Red Panic Button Section -->
+            <div class="bg-tacnet-card border border-red-500/30 rounded-3xl p-6 md:p-8 text-center shadow-2xl relative overflow-hidden">
+                <div class="absolute inset-0 bg-gradient-to-b from-red-500/5 to-transparent pointer-events-none"></div>
+                
+                <h2 class="text-xl md:text-2xl font-black text-white mb-2">EMERGENCY ASSISTANCE</h2>
+                <p class="text-sm text-slate-400 mb-8 max-w-md mx-auto">Tap and hold or press firmly in an active threat situation. Instant sub-second dispatch alert & automated forensic photo capture will initiate.</p>
+
+                <!-- The Red Button -->
+                <div class="my-8 flex justify-center">
+                    <button id="panic-btn" onclick="triggerEmergencyAlert()" class="w-48 h-48 md:w-56 md:h-56 rounded-full bg-gradient-to-tr from-red-700 via-red-600 to-orange-600 border-4 border-red-400/50 flex flex-col items-center justify-center text-white shadow-2xl animate-pulse-glow hover:scale-105 active:scale-95 transition-all cursor-pointer group">
+                        <i class="fa-solid fa-triangle-exclamation text-4xl md:text-5xl mb-2 group-hover:rotate-12 transition-transform"></i>
+                        <span class="font-black text-xl md:text-2xl tracking-wider">PANIC</span>
+                        <span class="text-[10px] uppercase tracking-widest text-red-200 font-semibold mt-1">Tap For Help</span>
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-3 pt-4 border-t border-tacnet-border text-xs text-slate-300">
+                    <div class="flex items-center justify-center space-x-2 bg-slate-900/50 p-2.5 rounded-xl border border-slate-800">
+                        <i class="fa-solid fa-bolt text-amber-400"></i>
+                        <span>Sub-Second Ping</span>
+                    </div>
+                    <div class="flex items-center justify-center space-x-2 bg-slate-900/50 p-2.5 rounded-xl border border-slate-800">
+                        <i class="fa-solid fa-camera text-red-400"></i>
+                        <span>Auto Photo Burst</span>
+                    </div>
+                    <div class="col-span-2 md:col-span-1 flex items-center justify-center space-x-2 bg-slate-900/50 p-2.5 rounded-xl border border-slate-800">
+                        <i class="fa-solid fa-volume-high text-orange-400"></i>
+                        <span>Piercing Siren Ready</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Action Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Orange Channel Card -->
+                <div onclick="switchTab('orange')" class="bg-tacnet-card hover:bg-slate-800/80 border border-orange-500/30 rounded-2xl p-5 cursor-pointer transition shadow-lg group">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="w-10 h-10 rounded-xl bg-orange-500/20 text-orange-400 flex items-center justify-center border border-orange-500/30 group-hover:scale-110 transition">
+                            <i class="fa-solid fa-bullhorn text-base"></i>
+                        </div>
+                        <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-orange-500/10 text-orange-400 border border-orange-500/20">Inner Circle</span>
+                    </div>
+                    <h3 class="text-base font-bold text-white mb-1">Orange Non-Emergency Channel</h3>
+                    <p class="text-xs text-slate-400">Broadcast updates, "arrived safely" check-ins, or coordinate non-urgent help with family and neighbors.</p>
+                </div>
+
+                <!-- Live Map Quick Card -->
+                <div onclick="switchTab('map')" class="bg-tacnet-card hover:bg-slate-800/80 border border-tacnet-border rounded-2xl p-5 cursor-pointer transition shadow-lg group">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="w-10 h-10 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center border border-blue-500/30 group-hover:scale-110 transition">
+                            <i class="fa-solid fa-map-location-dot text-base"></i>
+                        </div>
+                        <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20">Live Radar</span>
+                    </div>
+                    <h3 class="text-base font-bold text-white mb-1">Real-Time GPS Tracking</h3>
+                    <p class="text-xs text-slate-400">View your active blinking radar beacon, elevation vectors, and coordinate status in real time.</p>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ================= VIEW 2: ORANGE CHANNEL (COMMUNITY / CIRCLE) ================= -->
+        <div id="view-orange" class="space-y-6 hidden">
+            <div class="bg-gradient-to-r from-orange-950/40 to-tacnet-card border border-orange-500/30 rounded-2xl p-5 shadow-xl">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-12 h-12 rounded-xl bg-orange-500/20 border border-orange-500/40 flex items-center justify-center text-orange-400">
+                            <i class="fa-solid fa-bullhorn text-xl"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-lg font-bold text-white">The Orange Channel</h2>
+                            <p class="text-xs text-slate-400">Non-Emergency Community & Trusted Inner Circle Broadcast</p>
+                        </div>
+                    </div>
+                    <button onclick="openBroadcastModal()" class="bg-orange-600 hover:bg-orange-500 text-white font-semibold px-4 py-2.5 rounded-xl text-xs flex items-center gap-2 shadow-lg transition">
+                        <i class="fa-solid fa-plus"></i>
+                        <span>New Broadcast</span>
+                    </button>
+                </div>
+                <p class="text-xs text-slate-300 leading-relaxed bg-slate-900/60 p-3 rounded-xl border border-orange-500/20">
+                    Use this channel for safe arrivals, minor vehicle assistance, or checking in with loved ones without triggering law enforcement emergency dispatches.
+                </p>
+            </div>
+
+            <!-- Feed of Orange Broadcasts -->
+            <div class="space-y-3" id="orange-feed-container">
+                <!-- Dynamically populated broadcast items -->
+            </div>
+        </div>
+
+        <!-- ================= VIEW 3: LIVE GPS MAP TRACKER ================= -->
+        <div id="view-map" class="space-y-6 hidden">
+            <div class="bg-tacnet-card border border-tacnet-border rounded-2xl p-5 shadow-xl">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-12 h-12 rounded-xl bg-blue-500/20 border border-blue-500/40 flex items-center justify-center text-blue-400">
+                            <i class="fa-solid fa-satellite-dish text-xl"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-lg font-bold text-white">Live GPS Radar Tracker</h2>
+                            <p class="text-xs text-slate-400">Continuous Precision Location & Satellite Vector Stream</p>
+                        </div>
+                    </div>
+                    <span class="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-xs font-bold flex items-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+                        LIVE LINKED
+                    </span>
+                </div>
+
+                <!-- Simulated Map Canvas / Display Container -->
+                <div class="relative w-full h-80 bg-slate-950 rounded-2xl border border-slate-800 overflow-hidden shadow-inner flex items-center justify-center">
+                    <!-- Grid Background Effect -->
+                    <div class="absolute inset-0 opacity-20 bg-[radial-gradient(#3b82f6_1px,transparent_1px)] [background-size:24px_24px]"></div>
+                    
+                    <!-- Concentric Radar Rings -->
+                    <div class="absolute w-48 h-48 rounded-full border border-blue-500/20 animate-radar"></div>
+                    <div class="absolute w-72 h-72 rounded-full border border-blue-500/10"></div>
+                    <div class="absolute w-96 h-96 rounded-full border border-blue-500/5"></div>
+
+                    <!-- Blinking Location Dot in Center -->
+                    <div class="relative z-10 flex flex-col items-center">
+                        <div class="relative flex items-center justify-center">
+                            <div class="absolute w-12 h-12 rounded-full bg-blue-500/30 animate-ping"></div>
+                            <div class="w-6 h-6 rounded-full bg-blue-500 border-2 border-white shadow-lg flex items-center justify-center">
+                                <div class="w-2 h-2 rounded-full bg-white"></div>
+                            </div>
+                        </div>
+                        <div class="mt-3 bg-slate-900/90 border border-slate-700 px-3 py-1.5 rounded-lg text-xs font-mono text-blue-300 shadow-lg">
+                            <i class="fa-solid fa-location-dot text-red-400 mr-1"></i> 37.4929° N, 79.0360° W
+                        </div>
+                    </div>
+
+                    <!-- Map Overlay Badge -->
+                    <div class="absolute bottom-3 left-3 bg-slate-900/80 backdrop-blur border border-slate-800 px-3 py-1.5 rounded-xl text-[11px] text-slate-300">
+                        <i class="fa-solid fa-compass text-amber-400 mr-1"></i> Heading: 142° SE • Speed: 0.0 mph • Elev: 840 ft
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
+                    <div class="bg-slate-900 p-3 rounded-xl border border-slate-800">
+                        <span class="text-[10px] uppercase text-slate-500 font-semibold block">Accuracy</span>
+                        <span class="text-sm font-bold text-slate-200">± 2.4 meters</span>
+                    </div>
+                    <div class="bg-slate-900 p-3 rounded-xl border border-slate-800">
+                        <span class="text-[10px] uppercase text-slate-500 font-semibold block">Satellite Lock</span>
+                        <span class="text-sm font-bold text-slate-200">14 Satellites</span>
+                    </div>
+                    <div class="bg-slate-900 p-3 rounded-xl border border-slate-800">
+                        <span class="text-[10px] uppercase text-slate-500 font-semibold block">Battery Status</span>
+                        <span class="text-sm font-bold text-emerald-400">92% (Optimized)</span>
+                    </div>
+                    <div class="bg-slate-900 p-3 rounded-xl border border-slate-800">
+                        <span class="text-[10px] uppercase text-slate-500 font-semibold block">Encryption</span>
+                        <span class="text-sm font-bold text-blue-400">AES-256 SECURE</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= VIEW 4: ACTIVITY LOG ================= -->
+        <div id="view-log" class="space-y-6 hidden">
+            <div class="bg-tacnet-card border border-tacnet-border rounded-2xl p-5 shadow-xl">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-12 h-12 rounded-xl bg-purple-500/20 border border-purple-500/40 flex items-center justify-center text-purple-400">
+                            <i class="fa-solid fa-clock-rotate-left text-xl"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-lg font-bold text-white">Timestamped Occurrence Log</h2>
+                            <p class="text-xs text-slate-400">Immutable forensic event history and audit trail</p>
+                        </div>
+                    </div>
+                    <button onclick="clearLogs()" class="text-xs text-slate-400 hover:text-slate-200 bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-lg transition">
+                        Clear History
+                    </button>
+                </div>
+
+                <div class="space-y-3" id="activity-log-container">
+                    <!-- Dynamically populated log entries -->
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Bottom Navigation Bar -->
+    <nav class="bg-tacnet-card border-t border-tacnet-border px-4 py-2 fixed bottom-0 left-0 right-0 z-50 shadow-2xl">
+        <div class="max-w-md mx-auto grid grid-cols-4 gap-1 text-center">
+            <button onclick="switchTab('dashboard')" id="nav-dashboard" class="py-2 px-1 rounded-xl flex flex-col items-center justify-center text-red-500 transition">
+                <i class="fa-solid fa-shield-halved text-lg mb-1"></i>
+                <span class="text-[10px] font-bold tracking-wide">Panic / Home</span>
+            </button>
+            <button onclick="switchTab('orange')" id="nav-orange" class="py-2 px-1 rounded-xl flex flex-col items-center justify-center text-slate-400 hover:text-slate-200 transition">
+                <i class="fa-solid fa-bullhorn text-lg mb-1"></i>
+                <span class="text-[10px] font-semibold tracking-wide">Orange Channel</span>
+            </button>
+            <button onclick="switchTab('map')" id="nav-map" class="py-2 px-1 rounded-xl flex flex-col items-center justify-center text-slate-400 hover:text-slate-200 transition">
+                <i class="fa-solid fa-map-location-dot text-lg mb-1"></i>
+                <span class="text-[10px] font-semibold tracking-wide">Live GPS</span>
+            </button>
+            <button onclick="switchTab('log')" id="nav-log" class="py-2 px-1 rounded-xl flex flex-col items-center justify-center text-slate-400 hover:text-slate-200 transition">
+                <i class="fa-solid fa-list-check text-lg mb-1"></i>
+                <span class="text-[10px] font-semibold tracking-wide">Activity Log</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- EMERGENCY ACTIVE OVERLAY (Fullscreen modal when panic button is pressed) -->
+    <div id="emergency-modal" class="fixed inset-0 bg-red-950/90 backdrop-blur-md z-50 hidden flex flex-col items-center justify-center p-6 text-center animate-pulse">
+        <div class="w-24 h-24 rounded-full bg-red-600 border-4 border-white flex items-center justify-center text-white text-4xl mb-6 shadow-2xl animate-bounce">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+        </div>
+        <h2 class="text-3xl md:text-4xl font-black text-white tracking-wider mb-2">DISPATCH ALERT TRANSMITTING</h2>
+        <p class="text-red-200 text-sm md:text-base max-w-md mb-6">Sub-second handshake active. Local law enforcement & Inner Circle are receiving your precise GPS location and camera burst.</p>
+        
+        <div class="bg-black/50 border border-red-500/50 rounded-2xl p-4 max-w-sm w-full mb-8 text-left space-y-2 text-xs text-red-100">
+            <div class="flex items-center justify-between">
+                <span>Dispatch Status:</span>
+                <span class="font-bold text-emerald-400">ACKNOWLEDGED (0.34s)</span>
+            </div>
+            <div class="flex items-center justify-between">
+                <span>Forensic Photos:</span>
+                <span class="font-bold text-emerald-400">3 CAPTURED & VAULTED</span>
+            </div>
+            <div class="flex items-center justify-between">
+                <span>Audible Siren:</span>
+                <span class="font-bold text-amber-400" id="siren-status-text">ACTIVE (Piercing)</span>
+            </div>
+        </div>
+
+        <div class="flex flex-col sm:flex-row gap-3 w-full max-w-sm">
+            <button onclick="toggleSiren()" id="siren-toggle-btn" class="flex-1 bg-amber-600 hover:bg-amber-500 text-white font-bold py-3 px-4 rounded-xl text-sm transition shadow-lg">
+                <i class="fa-solid fa-volume-xmark mr-2"></i> Mute Siren
+            </button>
+            <button onclick="cancelEmergency()" class="flex-1 bg-white hover:bg-slate-100 text-red-600 font-black py-3 px-4 rounded-xl text-sm transition shadow-xl">
+                I AM SAFE (Enter PIN)
+            </button>
+        </div>
+    </div>
+
+    <!-- NEW ORANGE BROADCAST MODAL -->
+    <div id="broadcast-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-tacnet-card border border-orange-500/40 rounded-3xl p-6 max-w-md w-full shadow-2xl">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-bullhorn text-orange-400"></i> New Orange Channel Broadcast
+                </h3>
+                <button onclick="closeBroadcastModal()" class="text-slate-400 hover:text-white">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <form onsubmit="submitBroadcast(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Select Update Type</label>
+                    <select id="broadcast-type" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-orange-500">
+                        <option value="SAFE_ARRIVAL">✅ Arrived Safely at Destination</option>
+                        <option value="CHECK_IN">👋 Checking In (All Clear)</option>
+                        <option value="CAR_TROUBLE">🚗 Car Trouble / Waiting for Help</option>
+                        <option value="UNUSUAL_ACTIVITY">👀 Unusual Activity Noticed</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Custom Note / Message</label>
+                    <textarea id="broadcast-msg" rows="3" placeholder="Add optional details for your trusted circle..." class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-orange-500"></textarea>
+                </div>
+                <button type="submit" class="w-full bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white font-bold py-3 rounded-xl text-sm transition shadow-lg">
+                    Broadcast to Inner Circle
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- SETTINGS MODAL -->
+    <div id="settings-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-tacnet-card border border-tacnet-border rounded-3xl p-6 max-w-md w-full shadow-2xl">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-gear text-slate-400"></i> TACNET Citizen Settings
+                </h3>
+                <button onclick="closeSettingsModal()" class="text-slate-400 hover:text-white">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <div class="space-y-4 text-xs text-slate-300">
+                <div class="bg-slate-900 p-3 rounded-xl border border-slate-800 flex items-center justify-between">
+                    <div>
+                        <span class="font-bold text-white block">Auto Camera Burst on Panic</span>
+                        <span class="text-slate-400">Silently captures front & rear photos instantly</span>
+                    </div>
+                    <input type="checkbox" checked class="w-5 h-5 accent-red-500 rounded cursor-pointer">
+                </div>
+                <div class="bg-slate-900 p-3 rounded-xl border border-slate-800 flex items-center justify-between">
+                    <div>
+                        <span class="font-bold text-white block">High-Pitch Audible Siren</span>
+                        <span class="text-slate-400">Plays piercing alarm on panic trigger</span>
+                    </div>
+                    <input type="checkbox" checked id="setting-siren-toggle" class="w-5 h-5 accent-red-500 rounded cursor-pointer">
+                </div>
+                <div class="bg-slate-900 p-3 rounded-xl border border-slate-800 flex items-center justify-between">
+                    <div>
+                        <span class="font-bold text-white block">Inner Circle Auto-Notify</span>
+                        <span class="text-slate-400">SMS / Push alerts to family & neighbors</span>
+                    </div>
+                    <input type="checkbox" checked class="w-5 h-5 accent-orange-500 rounded cursor-pointer">
+                </div>
+                <button onclick="closeSettingsModal()" class="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-3 rounded-xl text-sm transition border border-slate-700">
+                    Save Preferences
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // State Management
+        let currentActiveTab = 'dashboard';
+        let sirenAudioCtx = null;
+        let sirenOscillator = null;
+        let sirenInterval = null;
+        let isSirenPlaying = false;
+
+        // Sample Data for Logs and Orange Channel
+        let activityLogs = [
+            { id: 1, type: 'CHECK_IN', title: 'Safe Arrival Check-In', details: 'Arrived home safely at residence.', timestamp: 'Today, 6:15 PM', badgeColor: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' },
+            { id: 2, type: 'SYSTEM', title: 'GPS Radar Calibration', details: 'High-precision satellite lock verified in Amherst County sector.', timestamp: 'Today, 2:00 PM', badgeColor: 'bg-blue-500/20 text-blue-400 border-blue-500/30' },
+            { id: 3, type: 'COMMUNITY', title: 'Orange Channel Test', details: 'Successfully broadcasted check-in to inner circle contacts.', timestamp: 'Yesterday, 8:30 PM', badgeColor: 'bg-orange-500/20 text-orange-400 border-orange-500/30' }
+        ];
+
+        let orangeBroadcasts = [
+            { id: 1, type: 'SAFE_ARRIVAL', title: 'Arrived Safely', note: 'Just parked in the driveway and heading inside safely. Thanks everyone!', time: '10 mins ago', author: 'You (Sarah M.)' },
+            { id: 2, type: 'CHECK_IN', title: 'Evening Check-In', note: 'All clear here at the community center. Hope everyone is having a wonderful evening.', time: '2 hours ago', author: 'You (Sarah M.)' },
+            { id: 3, type: 'CAR_TROUBLE', title: 'Assistance Needed', note: 'Flat tire in grocery parking lot. Waiting for roadside help. Inner circle notified.', time: 'Yesterday', author: 'You (Sarah M.)' }
+        ];
+
+        // Initialization on Load
+        window.onload = function() {
+            renderActivityLogs();
+            renderOrangeFeed();
+            updateTimestampDisplay();
+        };
+
+        // Navigation Tab Switcher
+        function switchTab(tabName) {
+            currentActiveTab = tabName;
+            const views = ['dashboard', 'orange', 'map', 'log'];
+            views.forEach(v => {
+                const el = document.getElementById(`view-${v}`);
+                const nav = document.getElementById(`nav-${v}`);
+                if (v === tabName) {
+                    el.classList.remove('hidden');
+                    nav.classList.remove('text-slate-400');
+                    nav.classList.add(v === 'dashboard' ? 'text-red-500' : v === 'orange' ? 'text-orange-500' : v === 'map' ? 'text-blue-500' : 'text-purple-500');
+                } else {
+                    el.classList.add('hidden');
+                    nav.classList.remove('text-red-500', 'text-orange-500', 'text-blue-500', 'text-purple-500');
+                    nav.classList.add('text-slate-400');
+                }
+            });
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Trigger Emergency Alert (Red Button)
+        function triggerEmergencyAlert() {
+            const modal = document.getElementById('emergency-modal');
+            modal.classList.remove('hidden');
+            
+            // Add to activity logs
+            const now = new Date();
+            const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) + ' ' + now.toLocaleDateString();
+            
+            activityLogs.unshift({
+                id: Date.now(),
+                type: 'EMERGENCY',
+                title: '🚨 EMERGENCY PANIC TRIGGERED',
+                details: 'Sub-second dispatch alert transmitted. 3 forensic photos auto-captured.',
+                timestamp: timeString,
+                badgeColor: 'bg-red-500/20 text-red-400 border-red-500/30'
+            });
+            renderActivityLogs();
+
+            // Start Piercing Siren if enabled in settings
+            const sirenSetting = document.getElementById('setting-siren-toggle');
+            if (!sirenSetting || sirenSetting.checked) {
+                startSirenSound();
+            }
+        }
+
+        // Cancel Emergency / Safe PIN simulation
+        function cancelEmergency() {
+            const modal = document.getElementById('emergency-modal');
+            modal.classList.add('hidden');
+            stopSirenSound();
+            
+            // Log resolution
+            const now = new Date();
+            activityLogs.unshift({
+                id: Date.now(),
+                type: 'RESOLVED',
+                title: 'Emergency Stand-Down Confirmed',
+                details: 'User entered security PIN. Dispatch notified of safe status.',
+                timestamp: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                badgeColor: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+            });
+            renderActivityLogs();
+        }
+
+        // Web Audio API Siren Generator
+        function startSirenSound() {
+            try {
+                if (!sirenAudioCtx) {
+                    sirenAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                if (sirenAudioCtx.state === 'suspended') {
+                    sirenAudioCtx.resume();
+                }
+                isSirenPlaying = true;
+                document.getElementById('siren-status-text').innerText = 'ACTIVE (Piercing)';
+                document.getElementById('siren-toggle-btn').innerHTML = '<i class="fa-solid fa-volume-xmark mr-2"></i> Mute Siren';
+
+                let up = true;
+                let freq = 600;
+                sirenInterval = setInterval(() => {
+                    if (!isSirenPlaying) return;
+                    if (sirenOscillator) {
+                        try { sirenOscillator.stop(); } catch(e){}
+                    }
+                    sirenOscillator = sirenAudioCtx.createOscillator();
+                    const gainNode = sirenAudioCtx.createGain();
+                    
+                    sirenOscillator.type = 'sawtooth';
+                    sirenOscillator.frequency.setValueAtTime(up ? 900 : 550, sirenAudioCtx.currentTime);
+                    
+                    gainNode.gain.setValueAtTime(0.15, sirenAudioCtx.currentTime);
+                    sirenOscillator.connect(gainNode);
+                    gainNode.connect(sirenAudioCtx.destination);
+                    
+                    sirenOscillator.start();
+                    up = !up;
+                }, 400);
+            } catch (e) {
+                console.log('AudioContext not allowed without user gesture or blocked', e);
+            }
+        }
+
+        function toggleSiren() {
+            if (isSirenPlaying) {
+                stopSirenSound();
+                document.getElementById('siren-status-text').innerText = 'MUTED';
+                document.getElementById('siren-toggle-btn').innerHTML = '<i class="fa-solid fa-volume-high mr-2"></i> Resume Siren';
+            } else {
+                startSirenSound();
+            }
+        }
+
+        function stopSirenSound() {
+            isSirenPlaying = false;
+            if (sirenInterval) clearInterval(sirenInterval);
+            if (sirenOscillator) {
+                try { sirenOscillator.stop(); } catch(e){}
+            }
+        }
+
+        // Quick Safe Check-in Button
+        function triggerQuickCheckIn() {
+            const now = new Date();
+            orangeBroadcasts.unshift({
+                id: Date.now(),
+                type: 'SAFE_ARRIVAL',
+                title: 'Safe Check-In Broadcast',
+                note: 'Instant check-in initiated successfully. All is well.',
+                time: 'Just now',
+                author: 'You (Sarah M.)'
+            });
+            activityLogs.unshift({
+                id: Date.now(),
+                type: 'CHECK_IN',
+                title: 'Safe Check-In Executed',
+                details: 'Inner circle notified of safe status.',
+                timestamp: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                badgeColor: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+            });
+            renderOrangeFeed();
+            renderActivityLogs();
+            switchTab('orange');
+        }
+
+        // Broadcast Modal Handlers
+        function openBroadcastModal() {
+            document.getElementById('broadcast-modal').classList.remove('hidden');
+        }
+        function closeBroadcastModal() {
+            document.getElementById('broadcast-modal').classList.add('hidden');
+        }
+        function submitBroadcast(e) {
+            e.preventDefault();
+            const type = document.getElementById('broadcast-type').value;
+            const note = document.getElementById('broadcast-msg').value || 'Routine status update.';
+            
+            let title = 'Safe Arrival';
+            if (type === 'CHECK_IN') title = 'Checking In';
+            if (type === 'CAR_TROUBLE') title = 'Vehicle Assistance';
+            if (type === 'UNUSUAL_ACTIVITY') title = 'Activity Notice';
+
+            orangeBroadcasts.unshift({
+                id: Date.now(),
+                type: type,
+                title: title,
+                note: note,
+                time: 'Just now',
+                author: 'You (Sarah M.)'
+            });
+
+            activityLogs.unshift({
+                id: Date.now(),
+                type: 'COMMUNITY',
+                title: `Orange Broadcast: ${title}`,
+                details: note,
+                timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                badgeColor: 'bg-orange-500/20 text-orange-400 border-orange-500/30'
+            });
+
+            renderOrangeFeed();
+            renderActivityLogs();
+            closeBroadcastModal();
+            document.getElementById('broadcast-msg').value = '';
+        }
+
+        // Settings Modal Handlers
+        function openSettingsModal() {
+            document.getElementById('settings-modal').classList.remove('hidden');
+        }
+        function closeSettingsModal() {
+            document.getElementById('settings-modal').classList.add('hidden');
+        }
+
+        // Render Activity Logs
+        function renderActivityLogs() {
+            const container = document.getElementById('activity-log-container');
+            container.innerHTML = activityLogs.map(log => `
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex items-start justify-between">
+                    <div class="space-y-1">
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs font-bold px-2 py-0.5 rounded border ${log.badgeColor}">${log.title}</span>
+                            <span class="text-[11px] text-slate-500">${log.timestamp}</span>
+                        </div>
+                        <p class="text-xs text-slate-300">${log.details}</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Render Orange Feed
+        function renderOrangeFeed() {
+            const container = document.getElementById('orange-feed-container');
+            container.innerHTML = orangeBroadcasts.map(b => `
+                <div class="bg-tacnet-card border border-orange-500/20 rounded-2xl p-4 space-y-2 shadow-md">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-orange-500"></span>
+                            <h4 class="text-sm font-bold text-white">${b.title}</h4>
+                        </div>
+                        <span class="text-[11px] text-slate-400">${b.time}</span>
+                    </div>
+                    <p class="text-xs text-slate-300 bg-slate-900/60 p-3 rounded-xl border border-slate-800">${b.note}</p>
+                    <div class="flex items-center justify-between text-[11px] text-slate-500 pt-1">
+                        <span>Author: <strong class="text-slate-400">${b.author}</strong></span>
+                        <span class="text-orange-400 font-medium"><i class="fa-solid fa-users mr-1"></i> Inner Circle Notified</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function clearLogs() {
+            activityLogs = [];
+            renderActivityLogs();
+        }
+
+        function updateTimestampDisplay() {
+            // Simulated live location adjustment
+            setInterval(() => {
+                const now = new Date();
+            }, 10000);
+        }
+    </script>
+</body>
+</html>
